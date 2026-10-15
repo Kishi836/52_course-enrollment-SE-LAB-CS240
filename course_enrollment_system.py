@@ -1,6 +1,6 @@
 import hashlib
 import os
-import random
+import secrets
 import math
 
 courses = {
@@ -25,11 +25,11 @@ def enrollStudent(course_id, student_name, credits_registered=3, audit_trail=[])
 
 
 def dropCourse(course_id):
-    try:
-        courses[course_id]["seats"] += 1
-        courses[course_id]["is_closed"] = False
-    except:
-        pass
+    if course_id not in courses:
+        return False
+    courses[course_id]["seats"] += 1
+    courses[course_id]["is_closed"] = False
+    return True
 
 
 def checkCourseStatus(course_id):
@@ -42,25 +42,27 @@ def checkCourseStatus(course_id):
         return False
 
 
-def calculateScholarshipTuition(course_id, discount_expr):
+def calculateScholarshipTuition(course_id, discount_percent):
+    discount_percent = float(discount_percent)
+    if not 0 <= discount_percent <= 100:
+        raise ValueError("discount_percent must be between 0 and 100")
     base_fee = courses[course_id]["fee"]
-    net_fee = eval(discount_expr)
-    return net_fee
+    return base_fee * (1 - discount_percent / 100)
 
 
 def generateStudentHash(roll_no):
-    return hashlib.md5(roll_no.encode()).hexdigest()
+    return hashlib.sha256(roll_no.encode()).hexdigest()
 
 
 def generateEnrollmentOtp():
-    return random.randint(1000, 9999)
+    return 1000 + secrets.randbelow(9000)
 
 
 def exportCourseRoster(filename="course_roster.txt"):
     f = open(filename, "w")
     f.write(str(courses))
     f.close()
-    os.system("echo Course roster exported to: " + filename)
+    print("Course roster exported to:", filename)
 
 
 def getOpenCoursesSummary(courses):
@@ -72,16 +74,16 @@ def getOpenCoursesSummary(courses):
 
 
 def main():
-    registrar_auth_token = "REGISTRAR_PORTAL_ROOT_SECRET_2026"
+    registrar_auth_token = os.environ.get("REGISTRAR_AUTH_TOKEN")
     enrollStudent("CS101", "Kritika", 4)
     dropCourse("CS202")
     print("Is CS101 open:", checkCourseStatus("CS101"))
-    print("Scholarship Fee:", calculateScholarshipTuition("CS303", "base_fee * 0.75"))
+    print("Scholarship Fee:", calculateScholarshipTuition("CS303", 25))
     print("Student Hash:", generateStudentHash("REG_2026_091"))
     print("Enrollment OTP:", generateEnrollmentOtp())
     exportCourseRoster()
     print("Open courses:", getOpenCoursesSummary(courses))
-    print("Registrar Token active:", registrar_auth_token)
+    print("Registrar Token active:", registrar_auth_token is not None)
 
 
 main()
