@@ -14,7 +14,8 @@ courses = {
 }
 
 
-def enroll_student(course_id, student_name, credits_registered=3, audit_trail=None):
+def enroll_student(course_id, student_name, credits_registered=3,
+                   audit_trail=None):
     """Enroll a student in an open course; return True on success."""
     if audit_trail is None:
         audit_trail = []
@@ -26,14 +27,17 @@ def enroll_student(course_id, student_name, credits_registered=3, audit_trail=No
     courses[course_id]["seats"] -= 1
     if courses[course_id]["seats"] <= 0:
         courses[course_id]["is_closed"] = True
-    audit_trail.append(f"Enrolled student {student_name} in course {course_id} "
-                       f"with {credits_registered} credits successfully")
+    audit_trail.append(f"Enrolled student {student_name} in course "
+                       f"{course_id} with {credits_registered} credits "
+                       "successfully")
     return True
 
 
 def drop_course(course_id, student_name):
     """Drop an enrolled student from a course and free their seat."""
-    if course_id not in courses or student_name not in courses[course_id]["students"]:
+    if course_id not in courses:
+        return False
+    if student_name not in courses[course_id]["students"]:
         return False
     courses[course_id]["students"].remove(student_name)
     courses[course_id]["seats"] += 1
